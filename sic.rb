@@ -46,40 +46,13 @@ def linkedFrameworksForTarget(target)
     target.frameworks_build_phase.file_display_names.map do |f| File.basename(f, ".framework") end
 end
 
-def filesForTarget(target)
-    if !target.respond_to?(:source_build_phase)
-        return []
-    end
-    target.source_build_phase.files.map do |f|
-       f.file_ref.real_path
-    end
-end
-
-def importsInFiles(files)
-    imports = Set[]
-    files.each do |f|
-        if File.extname(f) == ".swift"
-            File.open f do |file|
-                file.each do |line|
-                    if line =~ /(?:\@testable\s+)?import\s+(?:(?:typealias|struct|class|enum|protocol|let|var|func)\s+)?([^\.\n]*)/
-                        imports.add($1)
-                    end
-                end
-            end
-        end
-    end
-    imports.to_a
-end
 
 def check(target)
-    files = filesForTarget(target)
-    imports = importsInFiles(files)
     linkedFrameworks = linkedFrameworksForTarget(target)
-    puts target
-    imports.each do |import|
-        allTargets_str = @allTargets.map do |t| t.to_s end
-        if !linkedFrameworks.include?(import) && allTargets_str.include?(import)
-            puts("    #{import}")
+    allTargets_str = @allTargets.map do |t| t.to_s end
+    linkedFrameworks.each do |framework|
+        if !framework.start_with?("Pods_") && allTargets_str.include?(framework)
+            puts("\"#{target}\" -> \"#{framework}\"")
         end
     end
 end
